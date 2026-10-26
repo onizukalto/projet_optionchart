@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Options Desk</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/vendor/lightweight-charts.standalone.production.js"></script>
+</head>
+<body>
+
+  <!-- ============ Rail de navigation ============ -->
+  <nav class="rail">
+    <div class="marque" title="Options Desk">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 18 L10 8 L14 14 L20 4"/><circle cx="20" cy="4" r="1.6" fill="currentColor"/></svg>
+    </div>
+    <a href="#desk" data-section="desk"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 15l3-4 3 2 4-6"/></svg><span class="bulle-nav">Desk</span></a>
+    <a href="#topology" data-section="topology"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg><span class="bulle-nav">Topology</span></a>
+    <a href="#news" data-section="news"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="15" height="16" rx="2"/><path d="M18 8h3v10a2 2 0 0 1-2 2M7 8h7M7 12h7M7 16h4"/></svg><span class="bulle-nav">News</span></a>
+    <a href="#apprendre" data-section="apprendre"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M9 7h6"/></svg><span class="bulle-nav">Apprendre</span></a>
+
+    <!-- outils, en bas du rail -->
+    <div class="rail-bas">
+      <button id="ouvrir-calibrage" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5"/><path d="M12 1.5v4M12 18.5v4M1.5 12h4M18.5 12h4"/></svg><span class="bulle-nav">Calibrer le ratio future</span></button>
+      <button id="copier-pine" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h2"/><path d="M11 13h6M11 16.5h4"/></svg><span class="bulle-nav">Copier le script Pine</span></button>
+    </div>
+  </nav>
+
+  <!-- ============ Barre du haut ============ -->
+  <header class="topbar">
+    <div class="symboles" id="symboles"></div>
+    <div class="echeances" id="echeances"></div>
+    <div class="spacer"></div>
+    <div class="cotation">
+      <div><span id="lbl-spot">Spot</span><b id="spot">–</b></div>
+      <div><span id="lbl-future">Future</span><b id="future">–</b></div>
+      <div id="bloc-ratio"><span>Ratio</span><b id="ratio">–</b><small id="ratio-source"></small></div>
+    </div>
+    <div class="badge" id="badge-demo" hidden>DÉMO</div>
+    <div class="live" id="live"><i></i><span id="live-texte">connexion…</span></div>
+  </header>
+
+  <main>
+    <!-- ============ DESK ============ -->
+    <section class="section" id="sec-desk">
+      <div class="kpis" id="kpis"></div>
+      <div class="desk">
+        <div class="panel chart-panel">
+          <div class="panel-head">
+            <div class="onglets" id="onglets-chart">
+              <button class="actif" data-vue="sj" id="onglet-sj">QQQ · int map</button>
+              <button data-vue="future" id="onglet-future">MNQ</button>
+            </div>
+            <span class="panel-sous" id="chart-info"></span>
+            <div class="legende"><i class="c-pos"></i>γ long <i class="c-neg"></i>γ short</div>
+          </div>
+          <div class="toggles" id="toggles"></div>
+          <div class="chart-zone">
+            <div class="chart" id="chart-prix"></div>
+            <canvas class="calque" id="nuages"></canvas>
+          </div>
+          <div class="note" id="note-chart"></div>
+        </div>
+
+        <div class="panel cote-panel">
+          <div class="panel-head">
+            <div class="onglets" id="onglets-cote">
+              <button class="actif" data-cote="niveaux">Niveaux</button>
+              <button data-cote="metriques">Métriques</button>
+              <button data-cote="news">News</button>
+            </div>
+          </div>
+          <div class="cote-corps" id="cote-corps"></div>
+        </div>
+
+        <!-- Tape options : les bulles d'achats / ventes d'options sur une chart à part -->
+        <div class="panel tape-panel">
+          <div class="panel-head">
+            <span class="panel-titre">Tape options <small id="tape-info">sweeps &amp; blocks</small></span>
+            <div class="toggles-tete" id="filtres-prime"></div>
+            <div class="legende"><i class="c-pos rond"></i>haussier <i class="c-neg rond"></i>baissier <span class="leg-taille">taille = prime</span></div>
+          </div>
+          <div class="chart-zone tape-zone" id="zone-tape">
+            <div class="chart" id="chart-tape"></div>
+            <canvas class="calque" id="bulles-tape"></canvas>
+          </div>
+          <div class="note" id="note-tape"></div>
+        </div>
+        <div class="panel profil"><div class="panel-head"><span class="panel-titre">Smile <small>IV par strike</small></span><div class="legende"><i class="c-iv"></i>maintenant <i class="c-ref"></i><span id="smile-ref">il y a 30 min</span></div></div><div class="svg-zone" id="p-smile"></div><div class="note" id="note-smile"></div></div>
+
+        <div class="panel profil"><div class="panel-head"><span class="panel-titre">GEX <small>par strike</small></span><div class="legende"><i class="c-pos"></i>+ <i class="c-neg"></i>−</div></div><div class="svg-zone" id="p-gex"></div></div>
+        <div class="panel profil"><div class="panel-head"><span class="panel-titre">Open interest</span><div class="legende"><i class="c-call"></i>calls <i class="c-put"></i>puts</div></div><div class="svg-zone" id="p-oi"></div></div>
+        <div class="panel profil"><div class="panel-head"><span class="panel-titre">Flux par strike <small>prime nette</small></span><div class="legende"><i class="c-call"></i>calls <i class="c-put"></i>puts <span class="leg-taille">→ achetée · ← vendue</span></div></div><div class="svg-zone" id="p-flux"></div></div>
+        <div class="panel profil"><div class="panel-head"><span class="panel-titre">DEX <small>par strike</small></span><div class="legende"><i class="c-pos"></i>+ <i class="c-neg"></i>−</div></div><div class="svg-zone" id="p-dex"></div></div>
+        <div class="panel profil"><div class="panel-head"><span class="panel-titre">Vanna <small>par strike</small></span><div class="legende"><i class="c-pos"></i>+ <i class="c-neg"></i>−</div></div><div class="svg-zone" id="p-vex"></div></div>
+        <div class="panel profil"><div class="panel-head"><span class="panel-titre">Charm <small>par strike</small></span><div class="legende"><i class="c-pos"></i>+ <i class="c-neg"></i>−</div></div><div class="svg-zone" id="p-charm"></div></div>
+        <div class="panel profil"><div class="panel-head"><span class="panel-titre">Net drift <small>prime cumulée</small></span><div class="legende"><i class="c-call"></i>calls <i class="c-put"></i>puts</div></div><div class="drift-zone" id="chart-drift"></div></div>
+        <div class="panel profil"><div class="panel-head"><span class="panel-titre">VIX <small id="vix-info">intraday</small></span><div class="legende"><i class="c-vix"></i>VIX <i class="c-ref"></i>clôture veille</div></div><div class="drift-zone" id="chart-vix"></div></div>
+        <div class="panel profil"><div class="panel-head"><span class="panel-titre">IV vs réalisée <small id="iv-info"></small></span><div class="legende"><i class="c-iv"></i>IV <i class="c-rv"></i>réalisée 30 min</div></div><div class="drift-zone" id="chart-iv"></div></div>
+      </div>
+    </section>
+
+    <!-- ============ TOPOLOGY ============ -->
+    <section class="section" id="sec-topology">
+      <div class="topo">
+        <div class="panel">
+          <div class="panel-head">
+            <div class="onglets" id="onglets-topo">
+              <button class="actif" data-topo="3d">Surface 3D</button>
+              <button data-topo="2d">Carte 2D</button>
+            </div>
+            <span class="panel-sous" id="topo-info"></span>
+            <div class="legende"><i class="c-pos"></i>γ positif <i class="c-neg"></i>γ négatif</div>
+          </div>
+          <div class="topo-zone"><div id="topo-3d"></div><div class="svg-zone" id="topo-2d" hidden></div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><span class="panel-titre">Gamma par échéance</span></div>
+          <div class="parts" id="parts"></div>
+          <div class="texte">
+            <p>La surface montre le <b>GEX net</b> de chaque strike (axe x) pour chaque échéance (axe y). La hauteur (z) est la taille de l'exposition.</p>
+            <p><b>Vert</b> : les teneurs de marché sont long gamma, ils <b>freinent</b> les mouvements. <b>Rouge</b> : short gamma, ils les <b>amplifient</b>.</p>
+            <p>Un gros pic sur l'échéance du jour (0DTE) pèse énormément en intraday mais disparaît à 16 h. Un pic sur une échéance lointaine agit plus lentement mais plusieurs jours.</p>
+            <p>Fais tourner la surface à la souris, molette pour zoomer, double-clic pour revenir à la vue initiale.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ NEWS ============ -->
+    <section class="section" id="sec-news">
+      <div class="panel news-page">
+        <div class="panel-head"><span class="panel-titre">News <small id="news-info"></small></span></div>
+        <div class="news-filtres">
+          <input id="news-recherche" placeholder="Rechercher (ex : Fed, CPI, Nvidia)…">
+          <button class="tg on" data-filtre="tout">Tout</button>
+          <button class="tg" data-filtre="macro">Macro</button>
+          <button class="tg" data-filtre="important">Important</button>
+        </div>
+        <div id="news-liste"></div>
+      </div>
+    </section>
+
+    <!-- ============ APPRENDRE ============ -->
+    <section class="section" id="sec-apprendre">
+      <div class="apprendre">
+        <div class="intro" id="intro-apprendre"></div>
+        <div class="cartes" id="cartes"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============ Calibrage du ratio future / sous-jacent ============ -->
+  <div class="modale" id="modale-calibrage" hidden>
+    <div class="modale-boite">
+      <div class="panel-head"><span class="panel-titre">Calibrer la conversion <span id="cal-titre"></span></span><button class="fermer" id="cal-fermer" type="button">×</button></div>
+      <div class="modale-corps">
+        <p>Les niveaux sont convertis du <b id="cal-sj">QQQ</b> vers le <b id="cal-fut">MNQ</b> avec un ratio. Par défaut il est mesuré tout seul sur des bougies de la <b>même minute</b> (en séance). Si tu as une référence fiable (ta plateforme), entre deux prix relevés <b>au même moment</b> :</p>
+        <div class="cal-ligne"><label for="cal-prix-sj" id="cal-lbl-sj">Prix QQQ</label><input id="cal-prix-sj" type="number" step="0.01" inputmode="decimal"></div>
+        <div class="cal-ligne"><label for="cal-prix-fut" id="cal-lbl-fut">Prix MNQ</label><input id="cal-prix-fut" type="number" step="0.25" inputmode="decimal"></div>
+        <div class="cal-apercu" id="cal-apercu"></div>
+        <div class="cal-actuel" id="cal-actuel"></div>
+        <p class="cal-aide">Le calibrage reste valable jusqu'au changement de contrat (roll trimestriel), où il s'efface tout seul. L'écart entre future et indice baisse un peu chaque jour : refais-le une fois par semaine pour rester précis au point près.</p>
+        <div class="cal-boutons">
+          <button class="btn" id="cal-auto" type="button">Revenir à l'automatique</button>
+          <button class="btn principal" id="cal-ok" type="button">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tooltip" id="tooltip" hidden></div>
+
+  <script src="/static/app.js"></script>
+  <script src="/static/graphiques.js"></script>
+  <script src="/static/news.js"></script>
+  <script src="/static/desk.js"></script>
+  <script src="/static/topology.js"></script>
+  <script src="/static/apprendre.js"></script>
+  <script>App.demarrer();</script>
+</body>
+</html>

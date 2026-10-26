@@ -1,0 +1,24 @@
+# Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# MLflow
+mlruns/
+mlflow.db
+
+# Système / éditeur
+.DS_Store
+.vscode/
+
+# Archive contenant le .env réel
+dashboard_options.zip

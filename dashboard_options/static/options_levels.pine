@@ -1,0 +1,65 @@
+//@version=6
+indicator("Options Levels", overlay=true, max_lines_count=100, max_labels_count=100)
+
+// Niveaux d'options du __SOUS_JACENT__ (échéance __ECHEANCE__), générés le __DATE__ (UTC).
+// Ils sont convertis EN DIRECT sur ta chart (__CONTRAT__) : à chaque bougie où le
+// __SOUS_JACENT__ et le future cotent à la même minute, le ratio future / sous-jacent est
+// recalculé. Hors séance (le __SOUS_JACENT__ ne bouge plus), le dernier ratio de la séance est gardé.
+// À utiliser sur une chart du future en 1 à 15 minutes.
+
+niveaux = "__NIVEAUX__"
+symboleSj = input.symbol("__SYMBOLE_TV__", "Sous-jacent des options")
+ratioSecours = input.float(__RATIO__, "Ratio de secours (si pas encore de minute commune)", step=0.0001)
+ratioManuel = input.float(0.0, "Ratio forcé (0 = automatique)", step=0.0001)
+
+// prix et heure de la bougie du sous-jacent ; na si elle n'existe pas (hors séance)
+[sjClose, sjTime] = request.security(symboleSj, timeframe.period, [close, time], gaps=barmerge.gaps_on, lookahead=barmerge.lookahead_off)
+var float ratio = na
+if not na(sjClose) and sjTime == time and sjClose > 0
+    ratio := close / sjClose
+ratioUtilise = ratioManuel > 0 ? ratioManuel : na(ratio) ? ratioSecours : ratio
+
+couleurDe(nom) =>
+    switch nom
+        "call_wall"         => #4a90d9
+        "put_wall"          => #e5588f
+        "gamma_flip"        => #e8b84a
+        "major_long_gamma"  => #3aa98f
+        "major_short_gamma" => #e5484d
+        "vol_trigger"       => #f08c3a
+        "max_pain"          => #9aa3b2
+        "plus_1_sigma"      => #c8c8c8
+        "moins_1_sigma"     => #c8c8c8
+        "delta_wall"        => #4fb37a
+        "delta_flip"        => #8fd1a8
+        "vanna_wall"        => #a874d8
+        "vanna_flip"        => #c9a6ec
+        "vega_wall"         => #37b6c9
+        "charm_zone"        => #e0734f
+        "max_call_oi"       => #7fb2ea
+        "max_put_oi"        => #ef8fb3
+        "hvl"               => #d9c25a
+        => #8a93a6
+
+quart(x) => math.round(x * 4) / 4
+
+if barstate.islast
+    for l in line.all
+        line.delete(l)
+    for lb in label.all
+        label.delete(lb)
+    for morceau in str.split(niveaux, ";")
+        paire = str.split(morceau, "=")
+        if array.size(paire) == 2
+            nom = str.replace_all(array.get(paire, 0), " ", "")
+            prixSj = str.tonumber(array.get(paire, 1))
+            if not na(prixSj)
+                prix = quart(prixSj * ratioUtilise)
+                c = couleurDe(nom)
+                line.new(bar_index - 1, prix, bar_index, prix, extend=extend.both, color=c, style=line.style_dotted, width=1)
+                label.new(bar_index + 5, prix, str.upper(str.replace_all(nom, "_", " ")) + "  " + str.tostring(prix, "#.00") + "  (" + str.tostring(prixSj) + ")", style=label.style_label_left, color=color.new(#000000, 100), textcolor=c, size=size.small)
+
+var table info = table.new(position.top_right, 1, 1)
+if barstate.islast
+    source = ratioManuel > 0 ? "forcé" : na(ratio) ? "secours" : "en direct"
+    table.cell(info, 0, 0, "ratio " + str.tostring(ratioUtilise, "#.0000") + " · " + source, text_color=#8d8e96, text_size=size.small)

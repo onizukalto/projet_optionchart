@@ -1,0 +1,10 @@
+services:
+  dashboard:
+    build: .
+    container_name: options-desk
+    env_file: .env
+    ports:
+      - "8765:8000"          # port du Mac/serveur : port du conteneur
+    volumes:
+      - ./data:/app/data     # l'historique de la séance (nuages) survit aux redémarrages
+    restart: unless-stopped

@@ -1,0 +1,43 @@
+//@version=6
+indicator("Options Levels", overlay=true, max_lines_count=100, max_labels_count=100)
+
+// Généré automatiquement par niveaux.py le 2026-10-13 21:46 (heure de New York)
+niveaux = "call_wall=30817.25;put_wall=30775.75;gamma_flip=30817.25;vol_trigger=30862.00;max_pain=30982.75;vanna_wall=30651.50;vanna_flip=30817.25;charm_zone=30651.50;max_call_oi=31065.75;max_put_oi=30651.50;delta_wall=29833.00;delta_flip=30618.75;vega_wall=31490.25;hvl=30786.00"
+
+couleurDe(nom) =>
+    switch nom
+        "call_wall"   => #4fc3f7
+        "put_wall"    => #ff4fd8
+        "gamma_flip"  => #ffc107
+        "vol_trigger" => #ffb74d
+        "max_pain"    => #bdbdbd
+        "delta_wall"  => #66bb6a
+        "delta_flip"  => #a5d6a7
+        "vanna_wall"  => #ab47bc
+        "vanna_flip"  => #ce93d8
+        "vega_wall"   => #26c6da
+        "charm_zone"  => #ff7043
+        "max_call_oi" => #29b6f6
+        "max_put_oi"  => #ec407a
+        "hvl"         => #ffa726
+        => #8a93a6
+
+tracer(nom, prix) =>
+    c = couleurDe(nom)
+    texte = str.upper(str.replace_all(nom, "_", " ")) + "  " + str.tostring(prix)
+    line.new(bar_index - 1, prix, bar_index, prix, extend=extend.both, color=c, style=line.style_dotted, width=1)
+    label.new(bar_index + 5, prix, texte, style=label.style_label_left, color=color.new(#000000, 100), textcolor=c, size=size.small)
+
+if barstate.islast
+    for l in line.all
+        line.delete(l)
+    for lb in label.all
+        label.delete(lb)
+
+    for morceau in str.split(niveaux, ";")
+        paire = str.split(morceau, "=")
+        if array.size(paire) == 2
+            nom = str.replace_all(array.get(paire, 0), " ", "")
+            prix = str.tonumber(array.get(paire, 1))
+            if not na(prix)
+                tracer(nom, prix)
